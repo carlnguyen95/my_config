@@ -1,0 +1,83 @@
+{
+  "name": "Custom-Makefile-Snippets",
+  "displayName": "Cxx-Makefile-Snippets",
+  "description": "",
+  "version": "1.0.0",
+  "publisher": "carlnguyen95",
+  "icon": "images/logo.png",
+  "browser": "./lib/index.js",
+  "main": "./lib/index.js",
+  "keywords": [
+    "snippets",
+    "make",
+    "prettier"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Snippets"
+  ],
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "activationEvents": [
+    "onLanguage:make",
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "reactSnippets.search",
+        "title": "Snippet search"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "reactSnippets.search",
+        "key": "ctrl+alt+r",
+        "mac": "shift+cmd+r",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "ES React/React-Native/Redux snippets",
+      "properties": {
+        "reactSnippets.settings.prettierEnabled": {
+          "type": "boolean",
+          "markdownDescription": "[EXPERIMENTAL: MIGHT NOT WORK]: Integrate prettier settings with code generated from snippets.",
+          "default": false
+        }
+      }
+    },
+    "snippets": [
+      {
+        "language": "make",
+        "path": "./generated.json"
+      },
+    ]
+  },
+  "prettier": {
+    "bracketSameLine": false,
+    "bracketSpacing": true,
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "all",
+    "useTabs": false,
+    "endOfLine": "auto"
+  }
+}

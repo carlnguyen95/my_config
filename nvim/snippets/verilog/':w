@@ -1,0 +1,38 @@
+{
+  "C comment block": {
+    "body": [
+      "/*******************************************************************************************",
+      "* ${1}",
+      "*******************************************************************************************/",
+      "",
+      "${2}",
+      "",
+      "/******************************************************************************************/"
+    ],
+    "prefix": "cmblk-$",
+    "description": "Cxx comment block",
+    "scope": "verilog"
+  },
+  "C Function Description": {
+    "body": [
+      "/**",
+      "* @brief ${1}",
+      "*",
+      "* @param ${2}",
+      "*/"
+    ],
+    "prefix": "fcmt-$",
+    "description": "Cxx comment block",
+    "scope": "verilog"
+  },
+  "C esp_err_t function": {
+    "body": [
+      "always @($1) begin",
+      "$2",
+      "end"
+    ],
+    "prefix": "always-block",
+    "description": "Cxx esp_err_t function",
+    "scope": "verilog"
+  }
+}

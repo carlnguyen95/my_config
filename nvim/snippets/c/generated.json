@@ -1,0 +1,40 @@
+{
+  "C comment block": {
+    "body": [
+      "/*******************************************************************************************",
+      "* ${1}",
+      "*******************************************************************************************/",
+      "",
+      "${2}",
+      "",
+      "/******************************************************************************************/"
+    ],
+    "prefix": "cmblk-$",
+    "description": "Cxx comment block",
+    "scope": "c,cpp,h"
+  },
+  "C Function Description": {
+    "body": [
+      "/**",
+      "* @brief ${1}",
+      "*",
+      "* @param ${2}",
+      "*/"
+    ],
+    "prefix": "fcmt-$",
+    "description": "Cxx comment block",
+    "scope": "c,cpp,h"
+  },
+  "C esp_err_t function": {
+    "body": [
+      "esp_err_t ${1} (${2}) {",
+      " esp_err_t ret;",
+      "\n",
+      " return ret;",
+      "}"
+    ],
+    "prefix": "esp-err-func-$",
+    "description": "Cxx esp_err_t function",
+    "scope": "c,cpp,h"
+  }
+}

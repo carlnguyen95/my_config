@@ -1,0 +1,63 @@
+{
+  "Make comment block": {
+    "body": [
+      "############################################################################################",
+      "# ${1}",
+      "############################################################################################",
+      "",
+      "${2}",
+      "",
+      "############################################################################################",
+    ],
+    "prefix": "cmblk-$",
+    "description": "Make comment block",
+    "scope": "make"
+  },
+  "Makefile template": {
+    "body": [
+      "CC := gcc",
+      "CCP := g++",
+      "CFLAGS := -Wall ${1}",
+      "BUILD := ./build",
+      "BIN := $(BUILD)/bin",
+      "TARGET := ${2}",
+      "SRC := ${3}",
+      "",
+      "all: $(TARGET)",
+      "",
+      "rebuild: clean all",
+      "",
+      "clean:",
+      " @rm -rf $(BUILD)",
+      "",
+      ".PHONY: clean, all"
+    ],
+    "prefix": "template",
+    "description": "Makefile template",
+    "scope": "make"
+  },
+  "Makefile shell command": {
+    "body": [
+      "$(shell ${1})",
+    ],
+    "prefix": "shell",
+    "description": "shell command",
+    "scope": "make"
+  },
+  "Makefile shell command": {
+    "body": [
+      "$(shell ${1})",
+    ],
+    "prefix": "shell",
+    "description": "shell command",
+    "scope": "make"
+  },
+  "Makefile wildcart": {
+    "body": [
+      "$(wildcart ${1})",
+    ],
+    "prefix": "wildcart",
+    "description": "wildcart command",
+    "scope": "make"
+  }
+}

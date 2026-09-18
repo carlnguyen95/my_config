@@ -1,0 +1,48 @@
+{
+  "verilog comment block": {
+    "body": [
+      "/*******************************************************************************************",
+      "* ${1}",
+      "*******************************************************************************************/",
+      "",
+      "${2}",
+      "",
+      "/******************************************************************************************/"
+    ],
+    "prefix": "cmblk-$",
+    "description": "Cxx comment block",
+    "scope": "verilog"
+  },
+  "verilog Function Description": {
+    "body": [
+      "/**",
+      "* @brief ${1}",
+      "*",
+      "* @param ${2}",
+      "*/"
+    ],
+    "prefix": "fcmt-$",
+    "description": "Cxx comment block",
+    "scope": "verilog"
+  },
+  "Verilog always block": {
+    "body": [
+      "always @($1) begin",
+      "$2",
+      "end"
+    ],
+    "prefix": "awblk-$",
+    "description": "always block",
+    "scope": "verilog"
+  },
+  "Verilog initial block": {
+    "body": [
+      "initial begin",
+      "$1",
+      "end"
+    ],
+    "prefix": "iniblk-$",
+    "description": "initial block",
+    "scope": "verilog"
+  }
+}
