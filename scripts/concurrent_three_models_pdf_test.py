@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Run 5 concurrent PDF-QA requests across THREE Ollama models.
+Run 8 concurrent PDF-QA requests across THREE Ollama models.
 
 A pool of 20 questions is defined below. Each run randomly selects
-5 DISTINCT questions from that pool.
+8 DISTINCT questions from that pool.
 
 Models:
     - gemma4
@@ -11,9 +11,9 @@ Models:
     - qwen3-vl:8b
 
 Question/model policy:
-    - Randomly select 5 distinct questions from a 20-question pool.
+    - Randomly select 8 distinct questions from a 20-question pool.
     - Every run uses all 3 models at least once.
-    - The 5 selected questions are assigned randomly across the 3 models.
+    - The 8 selected questions are assigned randomly across the 3 models.
     - The selected questions and model assignment are printed before execution.
     - Set RANDOM_SEED to reproduce the same selection and assignment.
 
@@ -22,7 +22,7 @@ Each request:
 - sends the question + context to its assigned Ollama model,
 - records token counts,
 - records latency / Ollama timing,
-- saves the result to ./log/log_1 ... ./log/log_5.
+- saves the result to ./log/log_1 ... ./log/log_8.
 
 Usage:
     pip install -r requirements.txt
@@ -267,7 +267,7 @@ QUESTION_POOL = [
 ]
 
 
-REQUEST_COUNT = 5
+REQUEST_COUNT = 8
 
 if len(QUESTION_POOL) < REQUEST_COUNT:
     raise RuntimeError(
@@ -283,7 +283,7 @@ else:
 
 def select_random_questions() -> list[dict]:
     """
-    Select 5 different questions from the 20-question pool.
+    Select 8 different questions from the 20-question pool.
     random.sample() guarantees no duplicate question in one run.
     """
     return RNG.sample(
@@ -296,9 +296,9 @@ def build_random_assignment(request_count: int) -> list[str]:
     """
     Guarantee all 3 models are used at least once.
 
-    For 5 requests:
+    For 8 requests:
       - start with one slot for each model,
-      - add random models until there are 5 slots,
+      - add random models until there are 8 slots,
       - shuffle the model slots.
     """
     assignments = MODELS.copy()
@@ -767,7 +767,7 @@ def main() -> int:
     batch_start = time.perf_counter()
     results: list[dict] = []
 
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=REQUEST_COUNT) as executor:
         futures = [
             executor.submit(
                 call_model,
