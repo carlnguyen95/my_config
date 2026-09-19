@@ -28,7 +28,8 @@ PYTHON_VERSION="${PYTHON_VERSION:-latest}"
 
 OLLAMA_MODELS=(
   "gemma4"
-  # "deepseek-coder-v2"
+  "qwen3:8b"
+  "qwen3-vl:8b"
 )
 
 log() {
