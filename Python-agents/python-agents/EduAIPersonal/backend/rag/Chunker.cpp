@@ -1,0 +1,18 @@
+#include "backend/rag/Chunker.hpp"
+#include <algorithm>
+
+namespace edu_ai::rag {
+std::vector<std::string> Chunker::chunk(const std::string& text, std::size_t chunk_size, std::size_t overlap) const {
+  if (text.empty() || chunk_size == 0) return {};
+  overlap = std::min(overlap, chunk_size - 1);
+  std::vector<std::string> chunks;
+  for (std::size_t start = 0; start < text.size();) {
+    const auto length = std::min(chunk_size, text.size() - start);
+    chunks.push_back(text.substr(start, length));
+    if (start + length == text.size()) break;
+    start += chunk_size - overlap;
+  }
+  return chunks;
+}
+}  // namespace edu_ai::rag
+

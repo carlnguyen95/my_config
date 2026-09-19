@@ -1,0 +1,2 @@
+Return JSON only with score, dimensions, and reasoning. Dimensions: curiosity, depth, assumption_awareness, causal_reasoning, alternative_perspectives, cross_domain_potential, challenge_level.
+

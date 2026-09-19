@@ -1,0 +1,10 @@
+{
+  "app_name": "Edu AI",
+  "environment": "development",
+  "http": { "host": "127.0.0.1", "port": 8080 },
+  "database": { "driver": "sqlite", "path": "data/edu_ai.db" },
+  "conversation": { "history_message_limit": 8 },
+  "rag": { "top_k": 4, "chunk_size": 800, "chunk_overlap": 120 },
+  "assessment": { "mode": "ALWAYS" }
+}
+

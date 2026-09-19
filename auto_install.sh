@@ -28,7 +28,7 @@ PYTHON_VERSION="${PYTHON_VERSION:-latest}"
 
 OLLAMA_MODELS=(
   "gemma4"
-  "deepseek-coder-v2"
+  # "deepseek-coder-v2"
 )
 
 log() {
@@ -127,10 +127,10 @@ install_neovim() {
 
   TMP_DIR="./Programs"
   tmp_archive="$TMP_DIR/nvim.tar.gz"
-  install_dir="$TMP_DIR/nvim"
+  install_dir="$TMP_DIR/nvim-linux-x86_64"
 
   curl -fL "$nvim_url" -o "$tmp_archive"
-  tar -xzf "$tmp_archive" -C "$install_dir"
+  tar -xzf "$tmp_archive" -C "$TMP_DIR"
 
   sudo rm -rf /opt/nvim
   sudo mv "$install_dir" /opt/nvim
@@ -310,6 +310,13 @@ print_summary() {
   echo "  source ~/.zshrc"
 }
 
+create_proj_structure() {
+  log "Creating project structure"
+
+  mkdir -p "./proj"
+  mv my_config/Python_agents ./proj/
+}
+
 main() {
   detect_os
   install_system_packages
@@ -320,6 +327,7 @@ main() {
   install_latest_python
   configure_zsh
   install_lazyvim_profile
+  create_proj_structure
   print_summary
 }
 

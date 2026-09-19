@@ -1,0 +1,6 @@
+.env
+build/
+data/*.db
+*.log
+.DS_Store
+
