@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """
-Run 8 concurrent PDF-QA requests across THREE Ollama models.
+Run 8 concurrent PDF-QA requests across FOUR Ollama models.
 
 A pool of 20 questions is defined below. Each run randomly selects
 8 DISTINCT questions from that pool.
 
 Models:
     - gemma4
+    - gemma4:12b
     - qwen3:8b
-    - qwen3-vl:8b
+    - qwen3:14b
 
 Question/model policy:
     - Randomly select 8 distinct questions from a 20-question pool.
-    - Every run uses all 3 models at least once.
-    - The 8 selected questions are assigned randomly across the 3 models.
+    - Every run uses all 4 models at least once.
+    - The 8 selected questions are assigned randomly across the 4 models.
     - The selected questions and model assignment are printed before execution.
     - Set RANDOM_SEED to reproduce the same selection and assignment.
 
@@ -30,9 +31,10 @@ Usage:
     python3 concurrent_three_models_pdf_test.py "/path/to/history.pdf"
 
 Optional environment variables:
-    GEMMA_MODEL=gemma4
-    QWEN_MODEL=qwen3:8b
-    QWEN_VL_MODEL=qwen3-vl:8b
+    GEMMA_4_MODEL=gemma4
+    GEMMA_12B_MODEL=gemma4:12b
+    QWEN_8B_MODEL=qwen3:8b
+    QWEN_14B_MODEL=qwen3:14b
 
     OLLAMA_URL=http://localhost:11434/api/generate
     REQUEST_TIMEOUT=300
@@ -62,14 +64,16 @@ import requests
 from pypdf import PdfReader
 
 
-GEMMA_MODEL = os.getenv("GEMMA_MODEL", "gemma4")
-QWEN_MODEL = os.getenv("QWEN_MODEL", "qwen3:8b")
-QWEN_VL_MODEL = os.getenv("QWEN_VL_MODEL", "qwen3-vl:8b")
+GEMMA_4_MODEL = os.getenv("GEMMA_4_MODEL", "gemma4")
+GEMMA_12B_MODEL = os.getenv("GEMMA_12B_MODEL", "gemma4:12b")
+QWEN_8B_MODEL = os.getenv("QWEN_8B_MODEL", "qwen3:8b")
+QWEN_14B_MODEL = os.getenv("QWEN_14B_MODEL", "qwen3:14b")
 
 MODELS = [
-    GEMMA_MODEL,
-    QWEN_MODEL,
-    QWEN_VL_MODEL,
+    GEMMA_4_MODEL,
+    GEMMA_12B_MODEL,
+    QWEN_8B_MODEL,
+    QWEN_14B_MODEL,
 ]
 
 OLLAMA_URL = os.getenv(
@@ -294,7 +298,7 @@ def select_random_questions() -> list[dict]:
 
 def build_random_assignment(request_count: int) -> list[str]:
     """
-    Guarantee all 3 models are used at least once.
+    Guarantee all 4 models are used at least once.
 
     For 8 requests:
       - start with one slot for each model,
