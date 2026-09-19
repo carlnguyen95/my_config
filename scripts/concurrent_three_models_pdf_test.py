@@ -81,8 +81,7 @@ KEEP_ALIVE = os.getenv("KEEP_ALIVE", "10m")
 RANDOM_SEED_RAW = os.getenv("RANDOM_SEED")
 
 DEFAULT_PDF = (
-    "Lịch sử Việt Nam tập 01 Từ khởi thủy đến thế kỷ X-"
-    "Cao Duy Mến-2013.pdf"
+    "Vietnam_History.pdf"
 )
 
 PDF_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(DEFAULT_PDF)
