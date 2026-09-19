@@ -28,8 +28,9 @@ PYTHON_VERSION="${PYTHON_VERSION:-latest}"
 
 OLLAMA_MODELS=(
   "gemma4"
+  "gemma4:12b"
   "qwen3:8b"
-  "qwen3-vl:8b"
+  "qwen3:14b"
 )
 
 log() {
