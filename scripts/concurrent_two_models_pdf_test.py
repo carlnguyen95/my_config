@@ -62,8 +62,7 @@ NUM_PREDICT = int(os.getenv("NUM_PREDICT", "100"))
 KEEP_ALIVE = os.getenv("KEEP_ALIVE", "10m")
 
 DEFAULT_PDF = (
-    "Lịch sử Việt Nam tập 01 Từ khởi thủy đến thế kỷ X-"
-    "Cao Duy Mến-2013.pdf"
+    "Vietnam_History.pdf"
 )
 
 PDF_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(DEFAULT_PDF)
