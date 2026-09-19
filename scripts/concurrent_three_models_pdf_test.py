@@ -18,7 +18,7 @@ Question/model policy:
     - Set RANDOM_SEED to reproduce the same selection and assignment.
 
 Each request:
-- retrieves a small relevant context from the PDF,
+- retrieves a small relevant context from all PDFs in the source directory,
 - sends the question + context to its assigned Ollama model,
 - records token counts,
 - records latency / Ollama timing,
@@ -27,7 +27,9 @@ Each request:
 Usage:
     pip install -r requirements.txt
 
-    python3 concurrent_three_models_pdf_test.py "/path/to/history.pdf"
+    python3 concurrent_three_models_pdf_test.py ["/path/to/pdf-directory"]
+
+    # Without an argument, reads every .pdf file in the current directory.
 
 Optional environment variables:
     GEMMA_4_MODEL=gemma4
@@ -104,9 +106,7 @@ THINK = env_bool("THINK", False)
 
 RANDOM_SEED_RAW = os.getenv("RANDOM_SEED")
 
-DEFAULT_PDF = "Vietnam_History.pdf"
-
-PDF_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(DEFAULT_PDF)
+PDF_DIRECTORY = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(".")
 
 LOG_DIR = Path("./log")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -345,37 +345,68 @@ def normalize(text: str) -> str:
     return text
 
 
-def extract_pdf_pages(pdf_path: Path) -> list[str]:
-    if not pdf_path.exists():
-        raise FileNotFoundError(f"PDF not found: {pdf_path}")
+def find_pdf_files(pdf_directory: Path) -> list[Path]:
+    if not pdf_directory.exists():
+        raise FileNotFoundError(f"PDF directory not found: {pdf_directory}")
 
-    print(f"[INFO] Reading PDF: {pdf_path}")
+    if not pdf_directory.is_dir():
+        raise NotADirectoryError(
+            f"Expected a directory containing PDF files: {pdf_directory}"
+        )
 
-    reader = PdfReader(str(pdf_path))
-    pages: list[str] = []
+    pdf_paths = sorted(
+        path
+        for path in pdf_directory.iterdir()
+        if path.is_file() and path.suffix.lower() == ".pdf"
+    )
 
-    for i, page in enumerate(reader.pages, start=1):
+    if not pdf_paths:
+        raise FileNotFoundError(f"No PDF files found in: {pdf_directory}")
+
+    return pdf_paths
+
+
+def extract_pdf_pages(pdf_paths: list[Path]) -> list[tuple[str, int, str]]:
+    pages: list[tuple[str, int, str]] = []
+
+    for pdf_path in pdf_paths:
+        print(f"[INFO] Reading PDF: {pdf_path}")
+
         try:
-            text = page.extract_text() or ""
+            reader = PdfReader(str(pdf_path))
         except Exception as exc:
             print(
-                f"[WARN] Cannot extract page {i}: {exc}",
+                f"[WARN] Cannot open {pdf_path.name}: {exc}",
                 file=sys.stderr,
             )
-            text = ""
+            continue
 
-        pages.append(text)
+        for page_no, page in enumerate(reader.pages, start=1):
+            try:
+                text = page.extract_text() or ""
+            except Exception as exc:
+                print(
+                    f"[WARN] Cannot extract {pdf_path.name}, page {page_no}: {exc}",
+                    file=sys.stderr,
+                )
+                text = ""
 
-    print(f"[INFO] Extracted {len(pages)} pages")
+            pages.append((pdf_path.name, page_no, text))
+
+        print(f"[INFO] Extracted {len(reader.pages)} pages from {pdf_path.name}")
+
+    if not pages:
+        raise RuntimeError("Could not extract any pages from the PDF files.")
+
     return pages
 
 
 def retrieve_context(
-    pages: list[str],
+    pages: list[tuple[str, int, str]],
     question: str,
     keywords: list[str],
     top_pages: int = TOP_PAGES,
-) -> tuple[str, list[int]]:
+) -> tuple[str, list[str]]:
     """
     Lightweight retrieval:
     rank PDF pages by keyword/lexical overlap and return only a few pages.
@@ -391,9 +422,9 @@ def retrieve_context(
         if len(word) >= 4
     }
 
-    scored: list[tuple[float, int, str]] = []
+    scored: list[tuple[float, str, int, str]] = []
 
-    for idx, page_text in enumerate(pages):
+    for source_file, page_no, page_text in pages:
         if not page_text.strip():
             continue
 
@@ -413,27 +444,26 @@ def retrieve_context(
                 score += 0.25
 
         if score > 0:
-            scored.append((score, idx, page_text))
+            scored.append((score, source_file, page_no, page_text))
 
     scored.sort(key=lambda item: item[0], reverse=True)
     selected = scored[:top_pages]
 
     if not selected:
         selected = [
-            (0.0, idx, text)
-            for idx, text in enumerate(pages)
+            (0.0, source_file, page_no, text)
+            for source_file, page_no, text in pages
             if text.strip()
         ][:top_pages]
 
     context_parts: list[str] = []
-    page_numbers: list[int] = []
+    page_references: list[str] = []
 
-    for _, idx, text in selected:
-        page_no = idx + 1
-        page_numbers.append(page_no)
+    for _, source_file, page_no, text in selected:
+        page_references.append(f"{source_file}:p.{page_no}")
 
         context_parts.append(
-            f"\n--- PDF PAGE {page_no} ---\n"
+            f"\n--- PDF FILE {source_file} | PAGE {page_no} ---\n"
             f"{text.strip()}\n"
         )
 
@@ -445,18 +475,18 @@ def retrieve_context(
             + "\n[CONTEXT TRUNCATED]\n"
         )
 
-    return context, page_numbers
+    return context, page_references
 
 
 def make_prompt(question: str, context: str) -> str:
-    return f"""Bạn đang trả lời câu hỏi dựa CHỈ trên nội dung trích từ tài liệu Lịch sử Việt Nam bên dưới.
+    return f"""Bạn đang trả lời câu hỏi dựa CHỈ trên nội dung trích từ các tài liệu PDF bên dưới.
 
 Yêu cầu:
 - Trả lời ngắn gọn và chính xác.
 - Không dùng kiến thức ngoài phần CONTEXT.
 - Nếu CONTEXT không đủ thông tin, trả lời:
   "Không đủ thông tin trong phần trích được cung cấp."
-- Nếu có thể, nêu số trang PDF từ marker PDF PAGE.
+- Nếu có thể, nêu tên file và số trang từ marker PDF FILE/PAGE.
 
 CONTEXT:
 {context}
@@ -716,7 +746,7 @@ def main() -> int:
         print(f"  - {model}")
 
     print(f"[INFO] Ollama URL : {OLLAMA_URL}")
-    print(f"[INFO] PDF        : {PDF_PATH}")
+    print(f"[INFO] PDF directory : {PDF_DIRECTORY}")
     print(f"[INFO] Logs       : {LOG_DIR.resolve()}")
     print(f"[INFO] Thinking   : {THINK}")
 
@@ -736,7 +766,9 @@ def main() -> int:
         )
 
     try:
-        pages = extract_pdf_pages(PDF_PATH)
+        pdf_paths = find_pdf_files(PDF_DIRECTORY)
+        print(f"[INFO] PDF files     : {len(pdf_paths)}")
+        pages = extract_pdf_pages(pdf_paths)
 
     except Exception as exc:
         print(
