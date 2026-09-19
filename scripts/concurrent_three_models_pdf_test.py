@@ -2,16 +2,20 @@
 """
 Run 5 concurrent PDF-QA requests across THREE Ollama models.
 
+A pool of 20 questions is defined below. Each run randomly selects
+5 DISTINCT questions from that pool.
+
 Models:
     - gemma4
     - qwen3:8b
     - qwen3-vl:8b
 
-Assignment policy:
+Question/model policy:
+    - Randomly select 5 distinct questions from a 20-question pool.
     - Every run uses all 3 models at least once.
-    - 5 requests are assigned randomly across the 3 models.
-    - The final assignment is printed before execution.
-    - Set RANDOM_SEED to reproduce the same assignment.
+    - The 5 selected questions are assigned randomly across the 3 models.
+    - The selected questions and model assignment are printed before execution.
+    - Set RANDOM_SEED to reproduce the same selection and assignment.
 
 Each request:
 - retrieves a small relevant context from the PDF,
@@ -108,80 +112,224 @@ LOG_DIR = Path("./log")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-QUESTIONS = [
+QUESTION_POOL = [
     {
-        "id": 1,
+        "pool_id": 1,
         "question": "Bộ sách Lịch sử Việt Nam gồm bao nhiêu tập?",
         "keywords": ["bộ sách", "15 tập", "lịch sử việt nam"],
     },
     {
-        "id": 2,
+        "pool_id": 2,
         "question": "Tập 1 trình bày lịch sử Việt Nam trong giai đoạn nào?",
         "keywords": ["tập 1", "khởi thủy", "thế kỷ x"],
     },
     {
-        "id": 3,
-        "question": "Ai là chủ biên của Tập 1?",
+        "pool_id": 3,
+        "question": "Ai là chủ biên của Lịch sử Việt Nam Tập 1?",
         "keywords": ["vũ duy mền", "chủ biên", "tập 1"],
     },
     {
-        "id": 4,
+        "pool_id": 4,
         "question": (
             "Cuốn Lịch sử Việt Nam từ khởi thủy đến thế kỷ X "
-            "được biên soạn trong giai đoạn nào và có bao nhiêu chương?"
+            "được biên soạn trong giai đoạn nào, có bao nhiêu chương "
+            "và bao nhiêu đơn vị tài liệu tham khảo?"
         ),
-        "keywords": ["2007", "2011", "9 chương", "435"],
+        "keywords": ["2007", "2011", "9 chương", "435", "tài liệu tham khảo"],
     },
     {
-        "id": 5,
+        "pool_id": 5,
         "question": (
             "Ba trung tâm văn hóa dẫn đến sự hình thành các nhà nước "
             "sơ khai được nêu trong sách là những trung tâm nào?"
         ),
-        "keywords": [
-            "đông sơn",
-            "sa huỳnh",
-            "óc eo",
-            "văn lang",
-            "phù nam",
-        ],
+        "keywords": ["đông sơn", "sa huỳnh", "óc eo", "ba trung tâm"],
+    },
+    {
+        "pool_id": 6,
+        "question": (
+            "Những bằng chứng về sự tồn tại của Homo Erectus ở Việt Nam "
+            "được tìm thấy tại các hang nào?"
+        ),
+        "keywords": ["homo erectus", "thẩm hai", "thẩm khuyên", "răng"],
+    },
+    {
+        "pool_id": 7,
+        "question": (
+            "Vì sao việc nghiên cứu thời kỳ nguyên thủy phải dựa nhiều "
+            "vào tư liệu khảo cổ học và cổ sinh học?"
+        ),
+        "keywords": ["nguyên thủy", "không có tư liệu chữ viết", "khảo cổ học", "cổ sinh học"],
+    },
+    {
+        "pool_id": 8,
+        "question": (
+            "Nhóm biên soạn đã sử dụng những phương pháp liên ngành nào "
+            "trong quá trình nghiên cứu?"
+        ),
+        "keywords": ["phương pháp liên ngành", "c14", "nhân học", "khảo cổ học", "dân tộc học"],
+    },
+    {
+        "pool_id": 9,
+        "question": (
+            "Ba trung tâm văn hóa Đông Sơn, Sa Huỳnh và Óc Eo gắn với "
+            "những quốc gia cổ đại nào?"
+        ),
+        "keywords": ["đông sơn", "văn lang", "âu lạc", "sa huỳnh", "lâm ấp", "phù nam"],
+    },
+    {
+        "pool_id": 10,
+        "question": (
+            "Theo sách, ba trung tâm văn hóa cổ tiêu biểu thời sơ sử "
+            "phân bố ở miền Bắc, miền Trung và miền Nam là những văn hóa nào?"
+        ),
+        "keywords": ["đông sơn", "sa huỳnh", "đồng nai", "tiền óc eo", "miền bắc", "miền trung", "miền nam"],
+    },
+    {
+        "pool_id": 11,
+        "question": (
+            "Bằng chứng khảo cổ về nghề trồng lúa nước thời Tiền Đông Sơn "
+            "và Đông Sơn được sách nêu như thế nào?"
+        ),
+        "keywords": ["lúa nước", "3500", "3200", "tiền đông sơn", "đông sơn", "vỏ trấu"],
+    },
+    {
+        "pool_id": 12,
+        "question": (
+            "Theo cách xác định được nêu trong sách, nước Âu Lạc rơi vào "
+            "tay Triệu Đà sớm nhất vào năm nào?"
+        ),
+        "keywords": ["âu lạc", "triệu đà", "179 tcn", "cao hậu"],
+    },
+    {
+        "pool_id": 13,
+        "question": (
+            "Điều gì xảy ra với thành Cổ Loa và An Dương Vương khi "
+            "Triệu Đà tấn công Âu Lạc?"
+        ),
+        "keywords": ["cổ loa", "an dương vương", "triệu đà", "thất thủ"],
+    },
+    {
+        "pool_id": 14,
+        "question": (
+            "Cuộc khởi nghĩa Hai Bà Trưng nổ ra năm nào và đã thu được "
+            "bao nhiêu thành theo nội dung sách?"
+        ),
+        "keywords": ["hai bà trưng", "năm 40", "65 thành", "trưng trắc", "trưng nhị"],
+    },
+    {
+        "pool_id": 15,
+        "question": (
+            "Lý Bí lên ngôi Hoàng đế và lập nước Vạn Xuân vào năm nào, "
+            "đóng đô ở đâu?"
+        ),
+        "keywords": ["lý bí", "544", "vạn xuân", "tô lịch", "hoàng đế"],
+    },
+    {
+        "pool_id": 16,
+        "question": (
+            "Trong bối cảnh nhà Đường suy yếu, Khúc Thừa Dụ đã giành "
+            "quyền tự chủ bằng cách nào?"
+        ),
+        "keywords": ["khúc thừa dụ", "nhà đường suy yếu", "tiết độ sứ", "hồng châu"],
+    },
+    {
+        "pool_id": 17,
+        "question": (
+            "Khúc Hạo đã thực hiện những cải cách hành chính và xã hội "
+            "nào sau khi nắm quyền?"
+        ),
+        "keywords": ["khúc hạo", "cải cách hành chính", "bình quân thuế ruộng", "tha bỏ lực dịch", "hộ khẩu"],
+    },
+    {
+        "pool_id": 18,
+        "question": (
+            "Sau cải cách của Khúc Hạo, tổng số giáp được sách ghi nhận "
+            "là bao nhiêu?"
+        ),
+        "keywords": ["khúc hạo", "314 giáp", "150 giáp", "đổi hương thành giáp"],
+    },
+    {
+        "pool_id": 19,
+        "question": (
+            "Dương Đình Nghệ đã làm gì vào năm 931 và sau đó giữ vai trò gì?"
+        ),
+        "keywords": ["dương đình nghệ", "931", "đại la", "nam hán", "tiết độ sứ"],
+    },
+    {
+        "pool_id": 20,
+        "question": (
+            "Chiến thắng Bạch Đằng năm 938 của Ngô Quyền có ý nghĩa "
+            "như thế nào theo sách?"
+        ),
+        "keywords": ["ngô quyền", "bạch đằng", "938", "nam hán", "độc lập", "tự chủ"],
     },
 ]
 
 
-def build_random_assignment() -> list[str]:
+REQUEST_COUNT = 5
+
+if len(QUESTION_POOL) < REQUEST_COUNT:
+    raise RuntimeError(
+        f"QUESTION_POOL must contain at least {REQUEST_COUNT} questions."
+    )
+
+
+if RANDOM_SEED_RAW is not None:
+    RNG = random.Random(RANDOM_SEED_RAW)
+else:
+    RNG = random.Random()
+
+
+def select_random_questions() -> list[dict]:
     """
-    Guarantee that all 3 models are used at least once.
+    Select 5 different questions from the 20-question pool.
+    random.sample() guarantees no duplicate question in one run.
+    """
+    return RNG.sample(
+        QUESTION_POOL,
+        REQUEST_COUNT,
+    )
+
+
+def build_random_assignment(request_count: int) -> list[str]:
+    """
+    Guarantee all 3 models are used at least once.
 
     For 5 requests:
       - start with one slot for each model,
-      - add 2 extra randomly selected models,
-      - shuffle all 5 slots.
+      - add random models until there are 5 slots,
+      - shuffle the model slots.
     """
-    if RANDOM_SEED_RAW is not None:
-        random.seed(RANDOM_SEED_RAW)
-
     assignments = MODELS.copy()
 
-    while len(assignments) < len(QUESTIONS):
-        assignments.append(random.choice(MODELS))
+    while len(assignments) < request_count:
+        assignments.append(
+            RNG.choice(MODELS)
+        )
 
-    random.shuffle(assignments)
+    RNG.shuffle(assignments)
 
-    return assignments
+    return assignments[:request_count]
 
 
-MODEL_ASSIGNMENTS = build_random_assignment()
+SELECTED_QUESTIONS = select_random_questions()
+
+MODEL_ASSIGNMENTS = build_random_assignment(
+    len(SELECTED_QUESTIONS)
+)
 
 REQUESTS = [
     {
         **question,
+        "id": index + 1,
         "model": MODEL_ASSIGNMENTS[index],
     }
-    for index, question in enumerate(QUESTIONS)
+    for index, question in enumerate(SELECTED_QUESTIONS)
 ]
 
-# All 5 workers wait here before issuing their HTTP POST.
+
+# All selected workers wait here before issuing their HTTP POST.
 START_BARRIER = Barrier(len(REQUESTS))
 
 
@@ -341,6 +489,7 @@ def write_log(result: dict) -> None:
     log_path = LOG_DIR / f"log_{result['request_id']}"
 
     content = f"""REQUEST_ID: {result['request_id']}
+QUESTION_POOL_ID: {result.get('pool_id', 'N/A')}
 MODEL: {result['model']}
 QUESTION: {result['question']}
 SOURCE_PDF_PAGES: {result['source_pages']}
@@ -412,6 +561,7 @@ def call_model(prepared: dict) -> dict:
 
         result = {
             "request_id": request_id,
+            "pool_id": prepared.get("pool_id"),
             "question": question,
             "source_pages": source_pages,
             "model": model,
@@ -468,6 +618,7 @@ def call_model(prepared: dict) -> dict:
 
     result = {
         "request_id": request_id,
+        "pool_id": prepared.get("pool_id"),
         "question": question,
         "source_pages": source_pages,
         "model": data.get("model", model),
@@ -572,12 +723,16 @@ def main() -> int:
     if RANDOM_SEED_RAW is not None:
         print(f"[INFO] Random seed: {RANDOM_SEED_RAW}")
 
-    print("\n=== RANDOM MODEL ASSIGNMENT ===")
+    print("\n=== RANDOM QUESTION + MODEL ASSIGNMENT ===")
 
     for req in REQUESTS:
         print(
             f"Request {req['id']} "
+            f"[pool={req['pool_id']}] "
             f"-> {req['model']}"
+        )
+        print(
+            f"  Question: {req['question']}"
         )
 
     try:
@@ -607,7 +762,7 @@ def main() -> int:
         })
 
     print("\n[INFO] Retrieval finished.")
-    print("[INFO] Starting 5 concurrent model requests...\n")
+    print(f"[INFO] Starting {len(REQUESTS)} concurrent model requests...\n")
 
     batch_start = time.perf_counter()
     results: list[dict] = []
@@ -645,7 +800,7 @@ def main() -> int:
     print("\n=== BATCH SUMMARY ===")
 
     print(
-        f"5 concurrent requests completed in "
+        f"{len(REQUESTS)} concurrent requests completed in "
         f"{batch_elapsed:.3f} seconds"
     )
 
@@ -657,7 +812,7 @@ def main() -> int:
 
     print(
         f"successful_requests : "
-        f"{len(successful)}/5"
+        f"{len(successful)}/{len(REQUESTS)}"
     )
 
     if successful:
@@ -694,7 +849,7 @@ def main() -> int:
             model,
         )
 
-    return 0 if len(successful) == 5 else 2
+    return 0 if len(successful) == len(REQUESTS) else 2
 
 
 if __name__ == "__main__":
