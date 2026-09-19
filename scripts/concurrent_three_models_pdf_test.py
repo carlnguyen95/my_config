@@ -35,8 +35,9 @@ Optional environment variables:
 
     TOP_PAGES=2
     MAX_CONTEXT_CHARS=4000
-    NUM_PREDICT=100
+    NUM_PREDICT=160
     KEEP_ALIVE=10m
+    THINK=false
 
     RANDOM_SEED=123
 """
@@ -75,14 +76,31 @@ OLLAMA_URL = os.getenv(
 REQUEST_TIMEOUT = float(os.getenv("REQUEST_TIMEOUT", "300"))
 TOP_PAGES = int(os.getenv("TOP_PAGES", "2"))
 MAX_CONTEXT_CHARS = int(os.getenv("MAX_CONTEXT_CHARS", "4000"))
-NUM_PREDICT = int(os.getenv("NUM_PREDICT", "100"))
+NUM_PREDICT = int(os.getenv("NUM_PREDICT", "160"))
 KEEP_ALIVE = os.getenv("KEEP_ALIVE", "10m")
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+
+    return raw.strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+# Thinking is disabled by default for this latency/QA benchmark.
+# Otherwise Qwen3-family models may spend the generation budget in the
+# separate `thinking` field before producing `response`.
+THINK = env_bool("THINK", False)
 
 RANDOM_SEED_RAW = os.getenv("RANDOM_SEED")
 
-DEFAULT_PDF = (
-    "Vietnam_History.pdf"
-)
+DEFAULT_PDF = "Vietnam_History.pdf"
 
 PDF_PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(DEFAULT_PDF)
 
@@ -330,7 +348,12 @@ SOURCE_PDF_PAGES: {result['source_pages']}
 === RESPONSE ===
 {result['answer']}
 
+=== THINKING ===
+{result.get('thinking', '')}
+
 === METRICS ===
+done_reason: {result.get('done_reason') or 'N/A'}
+think_enabled: {THINK}
 prompt_tokens: {fmt(result['prompt_tokens'])}
 completion_tokens: {fmt(result['completion_tokens'])}
 total_tokens: {fmt(result['total_tokens'])}
@@ -361,6 +384,7 @@ def call_model(prepared: dict) -> dict:
         "model": model,
         "prompt": prompt,
         "stream": False,
+        "think": THINK,
         "keep_alive": KEEP_ALIVE,
         "options": {
             "temperature": 0.1,
@@ -392,6 +416,8 @@ def call_model(prepared: dict) -> dict:
             "source_pages": source_pages,
             "model": model,
             "answer": "",
+            "thinking": "",
+            "done_reason": None,
             "error": f"{type(exc).__name__}: {exc}",
             "prompt_tokens": None,
             "completion_tokens": None,
@@ -436,12 +462,18 @@ def call_model(prepared: dict) -> dict:
             completion_tokens / eval_seconds
         )
 
+    answer = (data.get("response") or "").strip()
+    thinking = (data.get("thinking") or "").strip()
+    done_reason = data.get("done_reason")
+
     result = {
         "request_id": request_id,
         "question": question,
         "source_pages": source_pages,
         "model": data.get("model", model),
-        "answer": data.get("response", "").strip(),
+        "answer": answer,
+        "thinking": thinking,
+        "done_reason": done_reason,
         "error": error,
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
@@ -453,6 +485,22 @@ def call_model(prepared: dict) -> dict:
         "ollama_eval_seconds": eval_seconds,
         "tokens_per_second": tokens_per_second,
     }
+
+    # A successful HTTP response can still contain no final answer, e.g.
+    # when a thinking-capable model consumes num_predict before it reaches
+    # the final response.
+    if not answer:
+        if thinking:
+            result["error"] = (
+                "EMPTY_FINAL_RESPONSE: model returned thinking output "
+                "but no final response. Keep THINK=false or increase "
+                "NUM_PREDICT."
+            )
+        else:
+            result["error"] = (
+                "EMPTY_FINAL_RESPONSE: Ollama returned neither response "
+                "nor thinking text."
+            )
 
     write_log(result)
     return result
@@ -519,6 +567,7 @@ def main() -> int:
     print(f"[INFO] Ollama URL : {OLLAMA_URL}")
     print(f"[INFO] PDF        : {PDF_PATH}")
     print(f"[INFO] Logs       : {LOG_DIR.resolve()}")
+    print(f"[INFO] Thinking   : {THINK}")
 
     if RANDOM_SEED_RAW is not None:
         print(f"[INFO] Random seed: {RANDOM_SEED_RAW}")
