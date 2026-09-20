@@ -14,6 +14,12 @@ CREATE TABLE IF NOT EXISTS courses (
     answer_policy TEXT NOT NULL DEFAULT 'GUIDED' CHECK(answer_policy IN ('FULL_ANSWER','HINT_ONLY','GUIDED')),
     created_at TEXT NOT NULL, updated_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS teacher_configurations (
+    id INTEGER PRIMARY KEY, teacher_id INTEGER NOT NULL REFERENCES users(id), course_id INTEGER NOT NULL REFERENCES courses(id),
+    policy_text TEXT NOT NULL DEFAULT '' CHECK(length(policy_text) <= 12000),
+    created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+    UNIQUE(teacher_id, course_id)
+);
 CREATE TABLE IF NOT EXISTS enrollments (
     id INTEGER PRIMARY KEY, user_id INTEGER NOT NULL REFERENCES users(id), course_id INTEGER NOT NULL REFERENCES courses(id),
     created_at TEXT NOT NULL, UNIQUE(user_id, course_id)
@@ -55,4 +61,3 @@ CREATE TABLE IF NOT EXISTS thinking_assessments (
     reasoning TEXT NOT NULL, model_name TEXT NOT NULL, teacher_score REAL, teacher_feedback TEXT,
     review_status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL
 );
-

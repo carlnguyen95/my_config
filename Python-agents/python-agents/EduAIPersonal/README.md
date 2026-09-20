@@ -6,13 +6,13 @@ The codebase uses C++20 and CMake. Domain, service, repository, AI, RAG, and HTT
 
 ## Current status
 
-This commit establishes the project shape and compileable core contracts only. Authentication, persistence, HTTP endpoints, Ollama requests, and RAG retrieval are placeholders for the next vertical-slice implementation.
+The repository and service layers are implemented for the core MVP data model. HTTP endpoints, Ollama requests, RAG retrieval, and chat orchestration remain for the next vertical slice.
 
 ## Layout
 
 - `backend/models`: domain types and roles/policies.
 - `backend/services`: application use-case contracts.
-- `backend/repositories`: persistence contracts; SQL belongs here.
+- `backend/repositories`: one SQLite repository per database table; SQL belongs here.
 - `backend/ai`: provider abstraction, prompt/policy/tool orchestration.
 - `backend/rag`: document chunking, embedding, and retrieval boundaries.
 - `backend/controllers` and `backend/middleware`: thin HTTP adapter boundary.
@@ -29,12 +29,24 @@ ctest --test-dir build --output-on-failure
 ./build/edu_ai
 ```
 
+Run tests with logs and summaries:
+
+```sh
+scripts/test.sh all
+scripts/test.sh repository
+scripts/test.sh seed
+```
+
+Initialize a database explicitly with:
+
+```sh
+./build/edu_ai --init-db data/edu_ai.db
+```
+
 To attach Drogon later, install it and configure with `-DEDU_AI_ENABLE_DROGON=ON`. Controllers should remain adapters and call services only.
 
 ## Next vertical slice
 
-1. Implement SQLite connection/migrations and repositories.
-2. Implement password hashing, signed session/JWT handling, and auth middleware.
-3. Add the Drogon routes for register/login/me and learning chat.
-4. Implement `OllamaProvider`, then complete the policy → prompt → tool → storage path.
-
+1. Add the Drogon routes and auth middleware for register/login/me.
+2. Implement `OllamaProvider`, then complete the policy → prompt → tool → storage path.
+3. Add document ingestion and RAG retrieval services.

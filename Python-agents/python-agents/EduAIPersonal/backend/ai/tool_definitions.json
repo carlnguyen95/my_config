@@ -1,0 +1,218 @@
+{
+  "version": "1.0",
+  "runtime_status": "registered_by_register_available_tools; JSON Schema validation remains a follow-up",
+  "execution_contract": {
+    "actor_id_source": "server authentication context",
+    "role_source": "server authentication context",
+    "write_policy": "Write tools return needs_confirmation before execution unless the server receives explicit confirmation.",
+    "argument_validation": "The server validates required argument types before calling a service; full JSON Schema validation remains a follow-up."
+  },
+  "tools": [
+    {
+      "name": "get_course",
+      "service": "CourseService.get_course",
+      "minimum_role": "student",
+      "read_only": true,
+      "description": "Read the active user's accessible course information.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id"],
+        "properties": { "course_id": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    {
+      "name": "get_my_roadmap",
+      "service": "RoadmapService.get",
+      "minimum_role": "student",
+      "read_only": true,
+      "description": "Read the authenticated learner's roadmap for a course.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id"],
+        "properties": { "course_id": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    {
+      "name": "get_my_progress",
+      "service": "ProgressService.list",
+      "minimum_role": "student",
+      "read_only": true,
+      "description": "Read the authenticated learner's progress for a course.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id"],
+        "properties": { "course_id": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    {
+      "name": "get_question",
+      "service": "QuestionService.find",
+      "minimum_role": "student",
+      "read_only": true,
+      "description": "Read one question the authenticated user is allowed to access.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["question_id"],
+        "properties": { "question_id": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    {
+      "name": "update_my_progress",
+      "service": "ProgressService.update",
+      "minimum_role": "student",
+      "read_only": false,
+      "confirmation_summary": "Save your learning progress.",
+      "description": "Propose an update to the authenticated learner's progress. Requires explicit confirmation.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id", "topic", "status", "progress_value"],
+        "properties": {
+          "course_id": { "type": "integer", "minimum": 1 },
+          "topic": { "type": "string", "minLength": 1, "maxLength": 300 },
+          "status": { "type": "string", "enum": ["NOT_STARTED", "LEARNING", "COMPLETED", "NEEDS_REVIEW"] },
+          "progress_value": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    {
+      "name": "get_student_progress",
+      "service": "ProgressService.list",
+      "minimum_role": "teacher",
+      "read_only": true,
+      "description": "Read one student's progress in a teacher-managed course.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["student_id", "course_id"],
+        "properties": {
+          "student_id": { "type": "integer", "minimum": 1 },
+          "course_id": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    {
+      "name": "get_course_assessments",
+      "service": "AssessmentService.list_for_course",
+      "minimum_role": "teacher",
+      "read_only": true,
+      "description": "Read assessment drafts in a teacher-managed course.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id"],
+        "properties": { "course_id": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    {
+      "name": "save_teacher_policy",
+      "service": "TeacherConfigurationService.save",
+      "minimum_role": "teacher",
+      "read_only": false,
+      "confirmation_summary": "Save the teacher policy sent to the model.",
+      "description": "Propose saving the course teacher's scoped AI policy. Requires explicit confirmation.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id", "policy_text"],
+        "properties": {
+          "course_id": { "type": "integer", "minimum": 1 },
+          "policy_text": { "type": "string", "minLength": 1, "maxLength": 12000 }
+        }
+      }
+    },
+    {
+      "name": "get_teacher_policy",
+      "service": "TeacherConfigurationService.get",
+      "minimum_role": "teacher",
+      "read_only": true,
+      "description": "Read the authenticated teacher's course-scoped AI policy.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id"],
+        "properties": { "course_id": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    {
+      "name": "add_question",
+      "service": "QuestionService.create",
+      "minimum_role": "teacher",
+      "read_only": false,
+      "confirmation_summary": "Create a draft question in the selected course.",
+      "description": "Propose creating a draft question in a teacher-managed course. Requires explicit confirmation.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id", "question", "answer"],
+        "properties": {
+          "course_id": { "type": "integer", "minimum": 1 },
+          "question": { "type": "string", "minLength": 1, "maxLength": 12000 },
+          "answer": { "type": "string", "minLength": 1, "maxLength": 12000 },
+          "hint": { "type": "string", "maxLength": 5000 },
+          "difficulty": { "type": "string", "maxLength": 100 },
+          "question_type": { "type": "string", "maxLength": 100 },
+          "source": { "type": "string", "maxLength": 300 }
+        }
+      }
+    },
+    {
+      "name": "add_thinking_assessment",
+      "service": "AssessmentService.create",
+      "minimum_role": "teacher",
+      "read_only": false,
+      "confirmation_summary": "Save the thinking assessment for the selected student message.",
+      "description": "Propose creating a model-generated thinking assessment for a student message in a teacher-managed course. Requires explicit confirmation.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["student_id", "course_id", "message_id", "score", "dimensions_json", "reasoning", "model_name"],
+        "properties": {
+          "student_id": { "type": "integer", "minimum": 1 },
+          "course_id": { "type": "integer", "minimum": 1 },
+          "message_id": { "type": "integer", "minimum": 1 },
+          "score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "dimensions_json": { "type": "string", "minLength": 2, "maxLength": 12000 },
+          "reasoning": { "type": "string", "minLength": 1, "maxLength": 12000 },
+          "model_name": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    },
+    {
+      "name": "get_my_thinking_assessments",
+      "service": "AssessmentService.list_for_self",
+      "minimum_role": "student",
+      "read_only": true,
+      "description": "Read the authenticated learner's thinking assessments for an accessible course.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id"],
+        "properties": { "course_id": { "type": "integer", "minimum": 1 } }
+      }
+    },
+    {
+      "name": "review_thinking_assessment",
+      "service": "AssessmentService.review",
+      "minimum_role": "teacher",
+      "read_only": false,
+      "confirmation_summary": "Save the teacher review of the thinking assessment.",
+      "description": "Propose recording a teacher score, feedback, and review status for an assessment in a teacher-managed course. Requires explicit confirmation.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["assessment_id", "teacher_score"],
+        "properties": {
+          "assessment_id": { "type": "integer", "minimum": 1 },
+          "teacher_score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "teacher_feedback": { "type": "string", "maxLength": 12000 },
+          "review_status": { "type": "string", "enum": ["pending", "reviewed", "needs_revision"] }
+        }
+      }
+    }
+  ]
+}

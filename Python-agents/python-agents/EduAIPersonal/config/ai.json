@@ -3,8 +3,10 @@
   "cloud_fallback_enabled": false,
   "ollama": {
     "base_url": "http://127.0.0.1:11434",
-    "model": "configure-a-local-model"
+    "routing": {
+      "strategy": "round_robin",
+      "models": ["gemma4", "gemma4:12b", "gwen3:8b"]
+    }
   },
   "cloud": { "provider": "", "model": "" }
 }
-

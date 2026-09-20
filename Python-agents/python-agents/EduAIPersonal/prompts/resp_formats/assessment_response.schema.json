@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "edu-ai/resp-formats/assessment-response",
+  "title": "Thinking assessment draft",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["assessment_type", "score", "dimensions", "reasoning", "next_steps", "requires_teacher_review", "tool_calls"],
+  "properties": {
+    "assessment_type": { "const": "thinking_assessment_draft" },
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reasoning", "correctness", "evidence", "reflection"],
+      "properties": {
+        "reasoning": { "type": "number", "minimum": 0, "maximum": 1 },
+        "correctness": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reflection": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "reasoning": { "type": "string" },
+    "next_steps": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "requires_teacher_review": { "const": true },
+    "tool_calls": {
+      {
+        "id": "call_01",
+        "name": "get_my_progress",
+        "arguments": {
+          "course_id": 1
+        },
+      },
+    },
+  }
+}

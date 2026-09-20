@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "edu-ai/resp-formats/learning-response",
+  "title": "Learning response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["response_type", "answer_policy", "content", "next_steps", "citations", "tool_calls"],
+  "properties": {
+    "response_type": {
+      "type": "string",
+      "enum": ["answer", "clarification", "insufficient_context"]
+    },
+    "answer_policy": {
+      "type": "string",
+      "enum": ["FULL_ANSWER", "HINT_ONLY", "GUIDED"]
+    },
+    "content": {
+      "type": "string",
+      "description": "Learner-facing Markdown. Do not reveal a final answer under HINT_ONLY."
+    },
+    "next_steps": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label"],
+        "properties": {
+          "label": { "type": "string" },
+          "action": { "type": "string", "enum": ["practice", "reflect", "ask_teacher", "none"] }
+        }
+      }
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label"],
+        "properties": {
+          "document_id": { "type": "integer", "minimum": 1 },
+          "chunk_id": { "type": "integer", "minimum": 1 },
+          "label": { "type": "string" }
+        }
+      }
+    },
+    "tool_calls": {
+      "type": "array",
+      "description": "Requested tools. The server injects actor identity and validates all arguments.",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "arguments"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "arguments": { "type": "object" }
+        }
+      }
+    }
+  }
+}

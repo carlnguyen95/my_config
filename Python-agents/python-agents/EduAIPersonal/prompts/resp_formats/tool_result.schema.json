@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "edu-ai/resp-formats/tool-result",
+  "title": "Tool execution result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tool_call_id", "status"],
+  "properties": {
+    "tool_call_id": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["success", "needs_confirmation", "denied", "not_found", "invalid_arguments", "error"] },
+    "data": { "type": "object" },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary"],
+      "properties": {
+        "summary": { "type": "string" },
+        "confirmation_token": { "type": "string" }
+      }
+    }
+  }
+}
