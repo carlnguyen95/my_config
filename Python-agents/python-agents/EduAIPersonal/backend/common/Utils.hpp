@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <json/json.h>
 
@@ -33,6 +34,14 @@ Result<Json::Value> json_object(const std::string& json);
 Result<models::Id> json_id(const std::string& json, const std::string& key);
 
 /**
+ * @brief Reads an integer-array field from a tool argument JSON object.
+ * @param json Model-provided JSON arguments.
+ * @param key Field name to read.
+ * @return Parsed ID list, or a tool-argument error.
+ */
+Result<std::vector<models::Id>> json_ids(const std::string& json, const std::string& key);
+
+/**
  * @brief Reads a string field from a tool argument JSON object.
  * @param json Model-provided JSON arguments.
  * @param key Field name to read.
@@ -55,5 +64,16 @@ Result<std::optional<std::string>> json_optional_string(const std::string& json,
  * @return Parsed decimal, or a tool-argument error.
  */
 Result<double> json_number(const std::string& json, const std::string& key);
+
+Json::Value to_json(const models::User& user);
+Json::Value to_json(const models::Course& course);
+Json::Value to_json(const models::Question& question);
+Json::Value to_json(const models::Document& document);
+Json::Value to_json(const models::DocumentChunk& chunk);
+Json::Value to_json(const models::Roadmap& roadmap);
+Json::Value to_json(const models::LearningProgress& progress);
+Json::Value to_json(const models::ThinkingAssessment& assessment);
+Json::Value error_json(const Error& error);
+Json::Value success_json(const Json::Value& payload);
 
 }  // namespace edu_ai::common

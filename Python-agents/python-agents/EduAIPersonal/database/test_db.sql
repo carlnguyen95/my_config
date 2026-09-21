@@ -17,15 +17,15 @@ DELETE FROM subjects;
 DELETE FROM users;
 
 INSERT INTO users (id,name,email,password_hash,role,status,created_at,updated_at) VALUES
-(1,'Teacher One','teacher1@test.local','seed-hash','teacher','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
+(1,'Trần Văn Minh','minh.tran@eduai.vn','pbkdf2-sha256$210000$00112233445566778899aabbccddeeff$9cdf77bbac5a1b456880c0c2067e8cca0a814996ee75dca319fe531c5c407cfd','teacher','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
 (2,'Teacher Two','teacher2@test.local','seed-hash','teacher','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
 (3,'Teacher Three','teacher3@test.local','seed-hash','teacher','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
 (4,'Teacher Four','teacher4@test.local','seed-hash','teacher','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
-(5,'Admin One','admin@test.local','seed-hash','admin','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
-(6,'Student 01','student01@test.local','seed-hash','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
-(7,'Student 02','student02@test.local','seed-hash','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
-(8,'Student 03','student03@test.local','seed-hash','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
-(9,'Student 04','student04@test.local','seed-hash','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
+(5,'Hoàng Quốc Tuấn','admin@eduai.vn','pbkdf2-sha256$210000$00112233445566778899aabbccddeeff$9cdf77bbac5a1b456880c0c2067e8cca0a814996ee75dca319fe531c5c407cfd','admin','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
+(6,'Nguyễn Hoàng Nam','nam.student@eduai.vn','pbkdf2-sha256$210000$00112233445566778899aabbccddeeff$9cdf77bbac5a1b456880c0c2067e8cca0a814996ee75dca319fe531c5c407cfd','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
+(7,'Lê Thị Mai Anh','maianh.le@eduai.vn','pbkdf2-sha256$210000$00112233445566778899aabbccddeeff$9cdf77bbac5a1b456880c0c2067e8cca0a814996ee75dca319fe531c5c407cfd','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
+(8,'Phạm Quốc Bảo','bao.pham@eduai.vn','pbkdf2-sha256$210000$00112233445566778899aabbccddeeff$9cdf77bbac5a1b456880c0c2067e8cca0a814996ee75dca319fe531c5c407cfd','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
+(9,'Đỗ Minh Quân','quan.do@eduai.vn','pbkdf2-sha256$210000$00112233445566778899aabbccddeeff$9cdf77bbac5a1b456880c0c2067e8cca0a814996ee75dca319fe531c5c407cfd','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
 (10,'Student 05','student05@test.local','seed-hash','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
 (11,'Student 06','student06@test.local','seed-hash','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),
 (12,'Student 07','student07@test.local','seed-hash','student','active','2026-09-01T08:00:00Z','2026-09-01T08:00:00Z'),

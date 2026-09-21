@@ -47,6 +47,9 @@ class OllamaProvider final : public AIProvider {
   /// Sends a request to the configured Ollama endpoint.
   AIResponse generate(const AIRequest& request) override;
 
+  /// Lists model tags currently available from the configured Ollama endpoint.
+  std::vector<std::string> list_models() const;
+
   /// Identifies this provider implementation.
   std::string name() const override {
     return "ollama";

@@ -55,6 +55,43 @@ using namespace sqlite_detail;
  * @param content Search text.
  * @return Matching chunks.
  */
+std::vector<DocumentChunk> SqliteDocumentChunkRepository::find_in_documents(Id course_id,
+                                                                         const std::vector<Id>& document_ids,
+                                                                         const std::string& query) {
+  if (document_ids.empty())
+    return {};
+
+  std::string placeholders;
+  for (std::size_t i = 0; i < document_ids.size(); ++i) {
+    if (i != 0) placeholders += ",";
+    placeholders += "?";
+  }
+
+  std::string sql =
+      "SELECT dc.id, dc.document_id, dc.chunk_index, dc.content, COALESCE(dc.embedding,'') FROM "
+      "document_chunks dc INNER JOIN documents d ON d.id = dc.document_id WHERE d.course_id=? AND "
+      "dc.document_id IN (" +
+      placeholders + ") AND dc.content LIKE ? ORDER BY dc.document_id, dc.chunk_index;";
+
+  auto s = prepare(db_, sql.c_str());
+  bind(s.get(), 1, course_id);
+  for (std::size_t i = 0; i < document_ids.size(); ++i)
+    bind(s.get(), static_cast<int>(i + 2), document_ids[i]);
+  bind(s.get(), static_cast<int>(document_ids.size() + 2), ("%" + query + "%").c_str());
+
+  std::vector<DocumentChunk> result;
+  while (sqlite3_step(s.get()) == SQLITE_ROW) {
+    DocumentChunk chunk;
+    chunk.id = sqlite3_column_int64(s.get(), 0);
+    chunk.document_id = sqlite3_column_int64(s.get(), 1);
+    chunk.chunk_index = sqlite3_column_int(s.get(), 2);
+    chunk.content = text(s.get(), 3);
+    chunk.embedding = text(s.get(), 4);
+    result.push_back(chunk);
+  }
+  return result;
+}
+
 std::vector<DocumentChunk> SqliteDocumentChunkRepository::find_by_content(Id document_id, const std::string& content) {
   auto s = prepare(db_,
                    "SELECT id,document_id,chunk_index,content,COALESCE(embedding,'') FROM document_chunks WHERE "

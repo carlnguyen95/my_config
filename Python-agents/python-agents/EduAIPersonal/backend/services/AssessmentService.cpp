@@ -35,6 +35,26 @@ common::Result<std::vector<ThinkingAssessment>> DefaultAssessmentService::list_f
 }
 
 /**
+ * @brief Searches assessments within a course the actor can access.
+ * @param actor_id Authenticated requester ID.
+ * @param course_id Course ID.
+ * @param query Search text.
+ * @return Matching assessments or authorization failure.
+ */
+common::Result<std::vector<ThinkingAssessment>> DefaultAssessmentService::find_in_course(Id actor_id, Id course_id,
+                                                                                      const std::string& query) {
+  const auto current = actor(users_, actor_id);
+  if (!current)
+    return missing_actor<std::vector<ThinkingAssessment>>();
+  if (!can_access_course(*current, courses_, enrollments_, course_id))
+    return denied<std::vector<ThinkingAssessment>>();
+  if (query.empty())
+    return common::Result<std::vector<ThinkingAssessment>>::failure(common::ErrorCode::InvalidRequest,
+                                                                   "A non-empty query is required.");
+  return common::Result<std::vector<ThinkingAssessment>>::success(assessments_.find_in_course(course_id, query));
+}
+
+/**
  * @brief Saves a teacher review after validating ownership and score boundaries.
  * @param actor_id Authenticated reviewer ID.
  * @param assessment Assessment ID and teacher review fields.

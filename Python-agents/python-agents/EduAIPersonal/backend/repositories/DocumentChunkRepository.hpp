@@ -8,6 +8,7 @@ class SqliteDocumentChunkRepository final : public DocumentChunkRepository {
   explicit SqliteDocumentChunkRepository(SqliteDatabase& db) : db_(db) {}
 
   std::vector<DocumentChunk> list_for_document(Id) override;
+  std::vector<DocumentChunk> find_in_documents(Id, const std::vector<Id>&, const std::string&) override;
   std::vector<DocumentChunk> find_by_content(Id, const std::string&) override;
   DocumentChunk save(DocumentChunk) override;
   bool remove(Id) override;

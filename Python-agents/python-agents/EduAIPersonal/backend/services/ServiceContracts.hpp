@@ -31,6 +31,10 @@ class CourseService {
   virtual common::Result<bool> enroll_self(Id actor_id, Id course_id) = 0;
   /// Removes the authenticated student's enrollment from a course.
   virtual common::Result<bool> unenroll_self(Id actor_id, Id course_id) = 0;
+  /// Finds course-learning content matching a query within a provided list of documents in one course.
+  virtual common::Result<std::vector<DocumentChunk>> find_info_in_courses(Id actor_id, Id course_id,
+                                                                         const std::vector<Id>& document_ids,
+                                                                         const std::string& query) = 0;
 };
 
 class TeacherConfigurationService {
@@ -89,6 +93,9 @@ class AssessmentService {
   virtual common::Result<std::vector<ThinkingAssessment>> list_for_self(Id actor_id, Id course_id) = 0;
   /// Lists assessments for a course managed by the actor.
   virtual common::Result<std::vector<ThinkingAssessment>> list_for_course(Id actor_id, Id course_id) = 0;
+  /// Searches assessments in a course the actor can access.
+  virtual common::Result<std::vector<ThinkingAssessment>> find_in_course(Id actor_id, Id course_id,
+                                                                       const std::string& query) = 0;
   /// Saves a teacher review after validating score and course ownership.
   virtual common::Result<ThinkingAssessment> review(Id actor_id, ThinkingAssessment assessment) = 0;
   /// Creates an assessment in a teacher-managed course.

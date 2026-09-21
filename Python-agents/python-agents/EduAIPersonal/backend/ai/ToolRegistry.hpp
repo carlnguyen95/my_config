@@ -19,6 +19,10 @@ class RoadmapService;
 class TeacherConfigurationService;
 }  // namespace edu_ai::services
 
+namespace edu_ai::repositories {
+class DocumentChunkRepository;
+}
+
 namespace edu_ai::ai {
 
 enum class ToolMode { Read, Write };
@@ -66,6 +70,7 @@ struct ServiceToolBindings {
   services::QuestionService& questions;
   services::AssessmentService& assessments;
   services::TeacherConfigurationService& teacher_configurations;
+  repositories::DocumentChunkRepository* document_chunks{nullptr};
 };
 
 class ToolRegistry {

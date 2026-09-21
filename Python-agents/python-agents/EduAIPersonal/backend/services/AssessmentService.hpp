@@ -11,6 +11,7 @@ class DefaultAssessmentService final : public AssessmentService {
 
   common::Result<std::vector<ThinkingAssessment>> list_for_self(Id, Id) override;
   common::Result<std::vector<ThinkingAssessment>> list_for_course(Id, Id) override;
+  common::Result<std::vector<ThinkingAssessment>> find_in_course(Id, Id, const std::string&) override;
   common::Result<ThinkingAssessment> review(Id, ThinkingAssessment) override;
   common::Result<ThinkingAssessment> create(Id, ThinkingAssessment) override;
 

@@ -93,9 +93,9 @@ int main() {
   CHECK(suite, rejected_empty_configuration);
 
   FakeProvider sequential_delegate;
-  RoundRobinProvider sequential_router(sequential_delegate, {"gemma4", "", "gemma4:12b", "gwen3:8b"});
-  const std::vector<std::string> expected_cycle = {"gemma4", "gemma4:12b", "gwen3:8b",
-                                                    "gemma4", "gemma4:12b", "gwen3:8b"};
+  RoundRobinProvider sequential_router(sequential_delegate, {"gemma4", "", "gemma4:12b", "qwen3:8b"});
+  const std::vector<std::string> expected_cycle = {"gemma4", "gemma4:12b", "qwen3:8b",
+                                                    "gemma4", "gemma4:12b", "qwen3:8b"};
 
   suite.scenario("Skip empty tags and repeat the configured model cycle in order");
   for (std::size_t index = 0; index < expected_cycle.size(); ++index) {
@@ -109,16 +109,16 @@ int main() {
   const auto sequential_metrics = sequential_router.metrics();
   const auto* gemma4_metrics = find_metrics(sequential_metrics, "gemma4");
   const auto* gemma4_12b_metrics = find_metrics(sequential_metrics, "gemma4:12b");
-  const auto* gwen3_metrics = find_metrics(sequential_metrics, "gwen3:8b");
+  const auto* qwen3_metrics = find_metrics(sequential_metrics, "qwen3:8b");
   CHECK(suite, sequential_metrics.size() == 3 && gemma4_metrics != nullptr && gemma4_12b_metrics != nullptr &&
-                   gwen3_metrics != nullptr);
+                   qwen3_metrics != nullptr);
   CHECK(suite, gemma4_metrics != nullptr && gemma4_metrics->requests == 2 && gemma4_metrics->successes == 2 &&
                    gemma4_metrics->failures == 0 && gemma4_metrics->latency_samples == 2);
   CHECK(suite, gemma4_12b_metrics != nullptr && gemma4_12b_metrics->requests == 2 &&
                    gemma4_12b_metrics->successes == 2 && gemma4_12b_metrics->failures == 0 &&
                    gemma4_12b_metrics->latency_samples == 2);
-  CHECK(suite, gwen3_metrics != nullptr && gwen3_metrics->requests == 2 && gwen3_metrics->successes == 2 &&
-                   gwen3_metrics->failures == 0 && gwen3_metrics->latency_samples == 2);
+  CHECK(suite, qwen3_metrics != nullptr && qwen3_metrics->requests == 2 && qwen3_metrics->successes == 2 &&
+                   qwen3_metrics->failures == 0 && qwen3_metrics->latency_samples == 2);
 
   suite.scenario("Record success and failure completion events without allowing observer exceptions to escape");
   FakeProvider observing_delegate;
@@ -149,7 +149,7 @@ int main() {
 
   suite.scenario("Distribute ten simultaneous calls as 4, 3, and 3 across three model slots");
   FakeProvider concurrent_delegate(std::chrono::milliseconds{2});
-  RoundRobinProvider concurrent_router(concurrent_delegate, {"gemma4", "gemma4:12b", "gwen3:8b"});
+  RoundRobinProvider concurrent_router(concurrent_delegate, {"gemma4", "gemma4:12b", "qwen3:8b"});
   constexpr std::size_t request_count = 10;
   std::barrier starting_gate(static_cast<std::ptrdiff_t>(request_count + 1));
   std::vector<std::optional<edu_ai::ai::RoundRobinResult>> results(request_count);
@@ -175,7 +175,7 @@ int main() {
     }
   }
   CHECK(suite, selected_counts["gemma4"] == 4 && selected_counts["gemma4:12b"] == 3 &&
-                   selected_counts["gwen3:8b"] == 3);
+                   selected_counts["qwen3:8b"] == 3);
   CHECK(suite, tickets.size() == request_count && *tickets.begin() == 0 && *tickets.rbegin() == request_count - 1);
 
   return suite.finish();

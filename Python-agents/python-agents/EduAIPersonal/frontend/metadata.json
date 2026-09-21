@@ -1,0 +1,6 @@
+{
+  "name": "Edu AI — Trợ lý Mentor & Bảng Điều Khiển Học Tập",
+  "description": "Nền tảng trợ lý học tập thông minh Edu AI với giao diện xanh navy tối giản hiện đại, bảng điều khiển trực quan, RAG tài liệu, ngân hàng câu hỏi, lộ trình học tập và đánh giá tư duy phản biện.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

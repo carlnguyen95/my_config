@@ -5,7 +5,7 @@
     "base_url": "http://127.0.0.1:11434",
     "routing": {
       "strategy": "round_robin",
-      "models": ["gemma4", "gemma4:12b", "gwen3:8b"]
+      "models": ["gemma4", "gemma4:12b", "qwen3:8b"]
     }
   },
   "cloud": { "provider": "", "model": "" }

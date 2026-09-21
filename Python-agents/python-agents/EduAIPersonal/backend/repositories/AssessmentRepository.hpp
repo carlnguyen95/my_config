@@ -10,6 +10,7 @@ class SqliteAssessmentRepository final : public AssessmentRepository {
   std::optional<ThinkingAssessment> find_by_id(Id) override;
   std::vector<ThinkingAssessment> list_for_user_course(Id, Id) override;
   std::vector<ThinkingAssessment> list_for_course(Id) override;
+  std::vector<ThinkingAssessment> find_in_course(Id, const std::string&) override;
   std::vector<ThinkingAssessment> find_by_status(Id, const std::string&) override;
   std::vector<ThinkingAssessment> find_by_created_at(Id, const std::string&) override;
   ThinkingAssessment save(ThinkingAssessment) override;

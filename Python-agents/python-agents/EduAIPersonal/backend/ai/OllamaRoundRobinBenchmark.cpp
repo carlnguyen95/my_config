@@ -151,6 +151,32 @@ BenchmarkConfiguration load_configuration(const std::filesystem::path& path) {
   return configuration;
 }
 
+bool is_available_model(const std::string& configured_model, const std::vector<std::string>& installed_models) {
+  if (std::find(installed_models.begin(), installed_models.end(), configured_model) != installed_models.end())
+    return true;
+  return configured_model.find(':') == std::string::npos &&
+         std::find(installed_models.begin(), installed_models.end(), configured_model + ":latest") != installed_models.end();
+}
+
+void verify_configured_models(edu_ai::ai::OllamaProvider& provider, const std::vector<std::string>& configured_models) {
+  const std::vector<std::string> installed_models = provider.list_models();
+  std::vector<std::string> missing_models;
+  for (const auto& model : configured_models) {
+    if (!is_available_model(model, installed_models))
+      missing_models.push_back(model);
+  }
+  if (missing_models.empty())
+    return;
+
+  std::string message{"Ollama is missing configured model tags: "};
+  for (std::size_t index{}; index < missing_models.size(); ++index)
+    message += (index == 0 ? "" : ", ") + missing_models[index];
+  message += ". Installed: ";
+  for (std::size_t index{}; index < installed_models.size(); ++index)
+    message += (index == 0 ? "" : ", ") + installed_models[index];
+  throw std::runtime_error(message);
+}
+
 double milliseconds(std::chrono::nanoseconds duration) {
   return static_cast<double>(duration.count()) / 1'000'000.0;
 }
@@ -243,8 +269,10 @@ int run(const BenchmarkOptions& options) {
   for (std::size_t index{}; index < configuration.models.size(); ++index)
     std::cout << (index == 0 ? "" : ", ") << configuration.models[index];
   std::cout << "\n  requests: " << options.requests << "\n  concurrent workers: " << worker_count << "\n";
+  std::cout << std::flush;
 
   edu_ai::ai::OllamaProvider transport(configuration.base_url);
+  verify_configured_models(transport, configuration.models);
   bool warmup_succeeded = true;
   if (options.warmup)
     warmup_succeeded = warm_models(transport, configuration, options.prompt);

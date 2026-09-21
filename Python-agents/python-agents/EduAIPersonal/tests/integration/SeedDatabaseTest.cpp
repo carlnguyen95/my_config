@@ -38,6 +38,20 @@ int count(edu_ai::repositories::SqliteDatabase& database, const char* table) {
   sqlite3_finalize(statement);
   return value;
 }
+
+/**
+ * @brief Executes SQL and reports whether the database rejected it.
+ * @param database Test database.
+ * @param sql SQL to run.
+ * @return True when SQLite rejects the statement because of integrity rules.
+ */
+bool expect_sqlite_error(edu_ai::repositories::SqliteDatabase& database, const std::string& sql) {
+  char* error = nullptr;
+  const int rc = sqlite3_exec(database.handle(), sql.c_str(), nullptr, nullptr, &error);
+  const bool rejected = rc != SQLITE_OK;
+  sqlite3_free(error);
+  return rejected;
+}
 }  // namespace
 
 /**
@@ -76,6 +90,31 @@ int main() {
     assert(count(database, table) == 20);
   }
 
+  suite.scenario("Foreign key violation on enrollment with invalid user_id is rejected");
+  assert(expect_sqlite_error(database,
+                            "INSERT INTO enrollments (id,user_id,course_id,created_at) VALUES (999,999,1,'2026-09-03T08:00:00Z');"));
+  suite.scenario("Foreign key violation leaves the seed counts unchanged");
+  assert(count(database, "enrollments") == 20);
+
+  suite.scenario("A rolled-back transaction does not persist any inserted rows");
+  const int progress_before = count(database, "learning_progress");
+  database.execute("BEGIN;");
+  database.execute(
+      "INSERT INTO learning_progress (id,user_id,course_id,topic,status,progress_value,updated_at) VALUES "
+      "(999,6,1,'Rollback Topic','NOT_STARTED',0.5,'2026-09-09T08:00:00Z');");
+  database.execute("ROLLBACK;");
+  assert(count(database, "learning_progress") == progress_before);
+
+  suite.scenario("Deleting a course with linked rows is rejected by foreign key constraints");
+  assert(expect_sqlite_error(database, "DELETE FROM courses WHERE id=1;"));
+  assert(count(database, "courses") == 20);
+
+  suite.scenario("Rerunning the seed script keeps each table at 20 rows");
+  database.initialize_schema(source / "database/test_db.sql");
+  for (const auto* table : tables) {
+    assert(count(database, table) == 20);
+  }
+
   SqliteUserRepository users(database);
   SqliteCourseRepository courses(database);
   SqliteTeacherConfigurationRepository teacher_configurations(database);
@@ -87,8 +126,8 @@ int main() {
   SqliteProgressRepository progress(database);
   SqliteAssessmentRepository assessments(database);
 
-  suite.scenario("Find users by name='Student' returns count=15");
-  assert(users.find_by_name("Student").size() == 15);
+  suite.scenario("Find users by name='Student' returns count=11 after replacing four sample-student names");
+  assert(users.find_by_name("Student").size() == 11);
   suite.scenario("Find users by status='inactive' returns count=1");
   assert(users.find_by_status("inactive").size() == 1);
   suite.scenario("Find courses by name='Course' returns count=20");

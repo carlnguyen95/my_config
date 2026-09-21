@@ -5,10 +5,11 @@ model in this fixed order:
 
 1. `gemma4`
 2. `gemma4:12b`
-3. `gwen3:8b`
+3. `qwen3:8b`
 
 The configured tags are passed to Ollama verbatim. Verify that each tag exists with `ollama list` before running a
-real benchmark.
+real benchmark. The benchmark also calls Ollama's model-list endpoint first and fails before any generation if a pool
+member is unavailable. A tag without `:version` is accepted when Ollama reports its `:latest` variant.
 
 ## What this phase measures
 
@@ -25,6 +26,10 @@ Build the project, then run a five-request and a ten-request burst:
 ./build/ollama_round_robin_benchmark --requests 5 --concurrency 5
 ./build/ollama_round_robin_benchmark --requests 10 --concurrency 10 --output outputs/round-robin-10.csv
 ```
+
+Before deploying, run `scripts/setup.sh --check-only`. It checks the build tools, Drogon HTTP framework, Ollama
+service, and every model configured in `config/ai.json`, then prints an `ollama pull <tag>` command for each missing
+model. The normal setup script performs the same check before building and initializing the database.
 
 The benchmark prints one result per dispatched ticket and a per-model summary. `--output` writes the per-request
 records as CSV. Run each shape at least twice: the first run includes model-load effects, while later runs are better

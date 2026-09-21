@@ -10,6 +10,7 @@
 namespace edu_ai::ai {
 using common::escape_json;
 using common::json_id;
+using common::json_ids;
 using common::json_number;
 using common::json_optional_string;
 using common::json_string;
@@ -315,6 +316,19 @@ common::Result<std::size_t> register_available_tools(ToolRegistry& registry, Ser
     if (!course_id.ok())
       return common::Result<ToolResult>::failure(course_id.error->code, course_id.error->message);
     const auto result = assessments.list_for_self(context.actor_id, *course_id.value);
+    return tool_result(result, result.ok() ? "{\"count\":" + std::to_string(result.value->size()) + "}" : "{}");
+  });
+
+  handlers.emplace("find_info_in_courses", [&courses = bindings.courses](const ToolContext& context,
+                                                                          const ToolInvocation& invocation) {
+    const auto course_id = json_id(invocation.arguments_json, "course_id");
+    const auto document_ids = json_ids(invocation.arguments_json, "document_ids");
+    const auto query = json_string(invocation.arguments_json, "query");
+    if (!course_id.ok() || !document_ids.ok() || !query.ok())
+      return common::Result<ToolResult>::failure(common::ErrorCode::ToolArgumentError,
+                                                 "Invalid course-info search arguments.");
+    const auto result = courses.find_info_in_courses(context.actor_id, *course_id.value, *document_ids.value,
+                                                    *query.value);
     return tool_result(result, result.ok() ? "{\"count\":" + std::to_string(result.value->size()) + "}" : "{}");
   });
 

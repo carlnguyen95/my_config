@@ -4,6 +4,19 @@
 namespace edu_ai::repositories {
 using namespace sqlite_detail;
 
+std::vector<Document> SqliteDocumentRepository::find_by_course(Id course_id) {
+  auto s = prepare(db_, "SELECT id, course_id, title, source_path FROM documents WHERE course_id=? ORDER BY created_at DESC;");
+  bind(s.get(), 1, course_id);
+  std::vector<Document> result;
+  while (sqlite3_step(s.get()) == SQLITE_ROW) {
+    result.push_back({.id = sqlite3_column_int64(s.get(), 0),
+                      .course_id = sqlite3_column_int64(s.get(), 1),
+                      .title = text(s.get(), 2),
+                      .source_path = text(s.get(), 3)});
+  }
+  return result;
+}
+
 /**
  * @brief Saves a source document.
  * @param d Document fields.

@@ -6,6 +6,7 @@
 #include "backend/repositories/Database.hpp"
 #include "backend/repositories/AssessmentRepository.hpp"
 #include "backend/repositories/CourseRepository.hpp"
+#include "backend/repositories/DocumentChunkRepository.hpp"
 #include "backend/repositories/EnrollmentRepository.hpp"
 #include "backend/repositories/LearningSessionRepository.hpp"
 #include "backend/repositories/MessageRepository.hpp"
@@ -51,6 +52,7 @@ int main() {
   SqliteLearningSessionRepository sessions(database);
   SqliteMessageRepository messages(database);
   SqliteAssessmentRepository assessments(database);
+  SqliteDocumentChunkRepository document_chunks(database);
 
   DefaultAuthService auth(users, PasswordHasher{}, JwtTokenIssuer{"this-is-a-development-secret-that-is-long-enough"});
   auto teacher_result = auth.register_user("Teacher", "teacher@example.test", "secure-passphrase", Role::Teacher);
@@ -80,9 +82,13 @@ int main() {
   assert(course.id > 0 && enrollments.create(student.id, course.id));
 
   DefaultCourseService course_service(courses, enrollments, users);
+  DefaultCourseService searchable_course_service(courses, enrollments, users, document_chunks);
   suite.scenario("Student user_id=" + std::to_string(student.id) +
                  " reads enrolled course_id=" + std::to_string(course.id));
   assert(course_service.get_course(student.id, course.id).ok());
+  suite.scenario("Reject course document search when the document list is empty or query is blank");
+  assert(!searchable_course_service.find_info_in_courses(student.id, course.id, {}, "TCP").ok());
+  assert(!searchable_course_service.find_info_in_courses(student.id, course.id, {1}, "").ok());
   const auto updated_course = course_service.update_course(
       teacher.id, {.id = course.id,
                    .subject_id = course.subject_id,
@@ -222,8 +228,8 @@ int main() {
        .assessments = assessment_service,
        .teacher_configurations = teacher_configuration_service},
       std::filesystem::path(EDU_AI_SOURCE_DIR) / "backend/ai/tool_definitions.json");
-  suite.scenario("Register 13 service-backed tools from the JSON catalog");
-  assert(registration.ok() && *registration.value == 13 && tool_registry.list_definitions().size() == 13);
+  suite.scenario("Register 14 service-backed tools from the JSON catalog");
+  assert(registration.ok() && *registration.value == 14 && tool_registry.list_definitions().size() == 14);
   suite.scenario("Structural course, roadmap, and question removal operations remain BE-only");
   assert(!tool_registry.find_definition("update_course").has_value() &&
          !tool_registry.find_definition("update_roadmap").has_value() &&

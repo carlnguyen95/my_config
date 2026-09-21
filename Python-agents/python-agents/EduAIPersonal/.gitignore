@@ -1,5 +1,8 @@
 .env
 build/
+config/ssl/*.crt
+config/ssl/*.key
+config/ssl/*.pem
 data/*.db
 *.log
 .DS_Store

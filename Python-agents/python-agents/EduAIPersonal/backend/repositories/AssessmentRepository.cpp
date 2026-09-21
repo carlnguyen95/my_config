@@ -81,6 +81,27 @@ std::vector<ThinkingAssessment> SqliteAssessmentRepository::list_for_course(Id c
 }
 
 /**
+ * @brief Searches course assessments for a text query.
+ * @param course_id Course ID.
+ * @param query Search text.
+ * @return Matching assessments.
+ */
+std::vector<ThinkingAssessment> SqliteAssessmentRepository::find_in_course(Id course_id, const std::string& query) {
+  auto s = prepare(db_,
+                   "SELECT "
+                   "id,user_id,course_id,message_id,score,dimensions_json,reasoning,model_name,teacher_score,teacher_"
+                   "feedback,review_status FROM thinking_assessments WHERE course_id=? AND (reasoning LIKE ? OR "
+                   "dimensions_json LIKE ? OR model_name LIKE ?) ORDER BY id DESC;");
+  bind(s.get(), 1, course_id);
+  bind(s.get(), 2, "%" + query + "%");
+  bind(s.get(), 3, "%" + query + "%");
+  bind(s.get(), 4, "%" + query + "%");
+  std::vector<ThinkingAssessment> result;
+  while (sqlite3_step(s.get()) == SQLITE_ROW) result.push_back(row(s.get()));
+  return result;
+}
+
+/**
  * @brief Saves an assessment.
  * @param a Assessment fields.
  * @return Persisted assessment.

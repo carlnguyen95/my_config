@@ -196,6 +196,28 @@
       }
     },
     {
+      "name": "find_info_in_courses",
+      "service": "CourseService.find_info_in_courses",
+      "minimum_role": "student",
+      "read_only": true,
+      "description": "Search the learning materials in an accessible course across a specific list of document IDs by keyword or phrase.",
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["course_id", "document_ids", "query"],
+        "properties": {
+          "course_id": { "type": "integer", "minimum": 1 },
+          "document_ids": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1 },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "query": { "type": "string", "minLength": 1, "maxLength": 1200 }
+        }
+      }
+    },
+    {
       "name": "review_thinking_assessment",
       "service": "AssessmentService.review",
       "minimum_role": "teacher",

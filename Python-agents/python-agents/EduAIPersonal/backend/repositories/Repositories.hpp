@@ -158,6 +158,8 @@ class AssessmentRepository {
   virtual std::vector<ThinkingAssessment> list_for_user_course(Id user_id, Id course_id) = 0;
   /// Lists all assessments for a course.
   virtual std::vector<ThinkingAssessment> list_for_course(Id course_id) = 0;
+  /// Searches assessments for text relevant to a course.
+  virtual std::vector<ThinkingAssessment> find_in_course(Id course_id, const std::string& query) = 0;
   /// Lists assessments with a review status in a course.
   virtual std::vector<ThinkingAssessment> find_by_status(Id course_id, const std::string& review_status) = 0;
   /// Lists assessments in a course created at the supplied UTC timestamp.
@@ -171,6 +173,8 @@ class AssessmentRepository {
 class DocumentRepository {
  public:
   virtual ~DocumentRepository() = default;
+  /// Lists all documents for a course.
+  virtual std::vector<Document> find_by_course(Id course_id) = 0;
   /// Creates or updates a source document.
   virtual Document save(Document document) = 0;
   /// Permanently removes a document by primary key.
@@ -182,6 +186,9 @@ class DocumentChunkRepository {
   virtual ~DocumentChunkRepository() = default;
   /// Lists chunks of a document in source order.
   virtual std::vector<DocumentChunk> list_for_document(Id document_id) = 0;
+  /// Lists document chunks that match the supplied query in a set of documents from one course.
+  virtual std::vector<DocumentChunk> find_in_documents(Id course_id, const std::vector<Id>& document_ids,
+                                                    const std::string& query) = 0;
   /// Lists document chunks whose content contains the supplied text.
   virtual std::vector<DocumentChunk> find_by_content(Id document_id, const std::string& content) = 0;
   /// Creates or updates a document chunk.

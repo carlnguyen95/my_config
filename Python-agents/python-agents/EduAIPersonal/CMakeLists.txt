@@ -7,14 +7,23 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(EDU_AI_BUILD_TESTS "Build the skeleton tests" ON)
-option(EDU_AI_ENABLE_DROGON "Enable the HTTP adapter once Drogon is installed" OFF)
+option(EDU_AI_ENABLE_DROGON "Enable Drogon HTTP framework support" ON)
 
 find_package(SQLite3 REQUIRED)
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
+if(EDU_AI_ENABLE_DROGON)
+    find_package(Drogon CONFIG QUIET)
+    if(NOT Drogon_FOUND)
+        message(WARNING "Drogon was requested but not found; continuing without HTTP server support.")
+        set(EDU_AI_ENABLE_DROGON OFF)
+    endif()
+endif()
+
 add_library(edu_ai_core
+    backend/bootstrap/HttpRuntime.cpp
     backend/common/Utils.cpp
     backend/ai/AIEngine.cpp
     backend/ai/OllamaProvider.cpp
@@ -57,7 +66,6 @@ add_executable(ollama_round_robin_benchmark backend/ai/OllamaRoundRobinBenchmark
 target_link_libraries(ollama_round_robin_benchmark PRIVATE edu_ai_core)
 
 if(EDU_AI_ENABLE_DROGON)
-    find_package(Drogon CONFIG REQUIRED)
     target_link_libraries(edu_ai PRIVATE Drogon::Drogon)
     target_compile_definitions(edu_ai PRIVATE EDU_AI_ENABLE_DROGON=1)
 endif()
@@ -91,4 +99,14 @@ if(EDU_AI_BUILD_TESTS)
     target_link_libraries(seed_database_test PRIVATE edu_ai_core)
     target_compile_definitions(seed_database_test PRIVATE EDU_AI_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
     add_test(NAME seed_database_test COMMAND seed_database_test)
+
+    add_executable(drogon_api_test tests/integration/DrogonApiTest.cpp)
+    target_link_libraries(drogon_api_test PRIVATE edu_ai_core)
+    if(EDU_AI_ENABLE_DROGON)
+        target_link_libraries(drogon_api_test PRIVATE Drogon::Drogon)
+        target_compile_definitions(drogon_api_test PRIVATE EDU_AI_ENABLE_DROGON=1 EDU_AI_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    else()
+        target_compile_definitions(drogon_api_test PRIVATE EDU_AI_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    endif()
+    add_test(NAME drogon_api_test COMMAND drogon_api_test)
 endif()

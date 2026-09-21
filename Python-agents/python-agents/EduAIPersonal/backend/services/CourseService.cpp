@@ -101,4 +101,33 @@ common::Result<bool> DefaultCourseService::unenroll_self(Id actor_id, Id course_
     return denied<bool>();
   return common::Result<bool>::success(enrollments_.remove(current->id, course_id));
 }
+
+/**
+ * @brief Searches course-learning content by keyword in an accessible course.
+ * @param actor_id Authenticated requester ID.
+ * @param course_id Course to search.
+ * @param query Search text.
+ * @return Matching course materials or an authorization/validation failure.
+ */
+common::Result<std::vector<DocumentChunk>> DefaultCourseService::find_info_in_courses(Id actor_id, Id course_id,
+                                                                                   const std::vector<Id>& document_ids,
+                                                                                   const std::string& query) {
+  const auto current = actor(users_, actor_id);
+  if (!current)
+    return missing_actor<std::vector<DocumentChunk>>();
+  if (!can_access_course(*current, courses_, enrollments_, course_id))
+    return denied<std::vector<DocumentChunk>>();
+  if (!document_chunks_)
+    return common::Result<std::vector<DocumentChunk>>::failure(common::ErrorCode::InvalidRequest,
+                                                             "Course document search is not configured.");
+  if (document_ids.empty())
+    return common::Result<std::vector<DocumentChunk>>::failure(common::ErrorCode::InvalidRequest,
+                                                             "At least one document_id is required.");
+  if (query.empty())
+    return common::Result<std::vector<DocumentChunk>>::failure(common::ErrorCode::InvalidRequest,
+                                                             "A non-empty search query is required.");
+
+  return common::Result<std::vector<DocumentChunk>>::success(
+      document_chunks_->find_in_documents(course_id, document_ids, query));
+}
 }  // namespace edu_ai::services

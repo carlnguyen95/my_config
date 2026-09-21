@@ -18,6 +18,44 @@
 #include "backend/repositories/UserRepository.hpp"
 #include "tests/common/TestSupport.hpp"
 
+#include <sqlite3.h>
+
+namespace {
+int count_rows(edu_ai::repositories::SqliteDatabase& database, const char* table) {
+  const std::string sql = "SELECT COUNT(*) FROM " + std::string(table) + ";";
+  sqlite3_stmt* statement = nullptr;
+  const int prepare_status = sqlite3_prepare_v2(database.handle(), sql.c_str(), -1, &statement, nullptr);
+  if (prepare_status != SQLITE_OK) {
+    throw std::runtime_error("Cannot prepare SQL for COUNT: " + std::string(sqlite3_errmsg(database.handle())));
+  }
+
+  int count = 0;
+  if (sqlite3_step(statement) == SQLITE_ROW) {
+    count = sqlite3_column_int(statement, 0);
+  }
+  sqlite3_finalize(statement);
+  return count;
+}
+
+std::string read_text(edu_ai::repositories::SqliteDatabase& database, const std::string& sql) {
+  sqlite3_stmt* statement = nullptr;
+  const int prepare_status = sqlite3_prepare_v2(database.handle(), sql.c_str(), -1, &statement, nullptr);
+  if (prepare_status != SQLITE_OK) {
+    throw std::runtime_error("Cannot prepare SQL for read: " + std::string(sqlite3_errmsg(database.handle())));
+  }
+
+  std::string value;
+  if (sqlite3_step(statement) == SQLITE_ROW) {
+    const unsigned char* text = sqlite3_column_text(statement, 0);
+    if (text != nullptr) {
+      value = reinterpret_cast<const char*>(text);
+    }
+  }
+  sqlite3_finalize(statement);
+  return value;
+}
+}  // namespace
+
 /**
  * @brief Verifies repository persistence.
  * @return Process exit code.
@@ -39,6 +77,15 @@ int main() {
   assert(subject.id > 0);
   suite.scenario("Find subject by name='Network' returns subject_id=" + std::to_string(subject.id));
   assert(subjects.find_by_name("Network").front().id == subject.id);
+
+  suite.scenario("Raw SQL inserts and reads a subject row directly from SQLite");
+  database.execute("INSERT INTO subjects(name, description) VALUES('DB smoke', 'Inserted by raw SQL');");
+  assert(count_rows(database, "subjects") >= 2);
+  assert(read_text(database, "SELECT name FROM subjects WHERE name='DB smoke';") == "DB smoke");
+  database.execute("UPDATE subjects SET description = 'Updated by raw SQL' WHERE name='DB smoke';");
+  assert(read_text(database, "SELECT description FROM subjects WHERE name='DB smoke';") == "Updated by raw SQL");
+  const auto raw_sql_subject = subjects.find_by_name("DB smoke");
+  assert(!raw_sql_subject.empty() && raw_sql_subject.front().description == "Updated by raw SQL");
 
   SqliteUserRepository users(database);
   auto teacher = users.create(

@@ -36,6 +36,7 @@ struct HttpEndpoint {
   std::string port;
   std::string host_header;
   std::string chat_path;
+  std::string tags_path;
 };
 
 struct HttpResponseMetadata {
@@ -170,7 +171,8 @@ HttpEndpoint parse_endpoint(const std::string& base_url) {
   std::string prefix = std::string(path);
   while (!prefix.empty() && prefix.back() == '/')
     prefix.pop_back();
-  endpoint.chat_path = (prefix.empty() ? std::string{} : std::move(prefix)) + "/api/chat";
+  endpoint.chat_path = prefix + "/api/chat";
+  endpoint.tags_path = prefix + "/api/tags";
   return endpoint;
 }
 
@@ -548,6 +550,23 @@ std::string response_body(const std::string& response, const HttpResponseMetadat
   return std::string(body);
 }
 
+struct HttpResponse {
+  HttpResponseMetadata metadata;
+  std::string body;
+};
+
+HttpResponse execute_http_request(const HttpEndpoint& endpoint, const std::string& request) {
+  const SocketHandle socket = connect_to(endpoint);
+  send_all(socket.get(), request);
+  const std::string raw_response = receive_http_response(socket.get());
+  const auto body_offset = header_end_offset(raw_response);
+  if (!body_offset)
+    throw std::runtime_error("Ollama endpoint returned an HTTP response without a header terminator.");
+  HttpResponseMetadata metadata = parse_http_headers(std::string_view(raw_response.data(), *body_offset));
+  std::string body = response_body(raw_response, metadata, *body_offset);
+  return {.metadata = std::move(metadata), .body = std::move(body)};
+}
+
 Json::Value parse_json(std::string_view json, const std::string& description) {
   Json::CharReaderBuilder builder;
   std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
@@ -649,19 +668,12 @@ AIResponse OllamaProvider::generate(const AIRequest& request) {
                                    "Content-Length: " + std::to_string(encoded_payload.size()) + "\r\n\r\n" +
                                    encoded_payload;
 
-  const SocketHandle socket = connect_to(endpoint);
-  send_all(socket.get(), http_request);
-  const std::string raw_response = receive_http_response(socket.get());
-  const auto body_offset = header_end_offset(raw_response);
-  if (!body_offset)
-    throw std::runtime_error("Ollama endpoint returned an HTTP response without a header terminator.");
-  const HttpResponseMetadata metadata =
-      parse_http_headers(std::string_view(raw_response.data(), *body_offset));
-  const std::string body = response_body(raw_response, metadata, *body_offset);
+  const HttpResponse http_response = execute_http_request(endpoint, http_request);
+  const std::string& body = http_response.body;
 
-  if (metadata.status_code < 200 || metadata.status_code >= 300) {
+  if (http_response.metadata.status_code < 200 || http_response.metadata.status_code >= 300) {
     const std::string detail = response_error_detail(body);
-    throw std::runtime_error("Ollama endpoint returned HTTP " + std::to_string(metadata.status_code) +
+    throw std::runtime_error("Ollama endpoint returned HTTP " + std::to_string(http_response.metadata.status_code) +
                              (detail.empty() ? std::string{} : ": " + detail));
   }
 
@@ -714,6 +726,33 @@ AIResponse OllamaProvider::generate(const AIRequest& request) {
   }
 
   return result;
+}
+
+std::vector<std::string> OllamaProvider::list_models() const {
+  const HttpEndpoint endpoint = parse_endpoint(base_url_);
+  const std::string http_request = "GET " + endpoint.tags_path + " HTTP/1.1\r\n" +
+                                   "Host: " + endpoint.host_header + "\r\n" +
+                                   "Accept: application/json\r\n" +
+                                   "Connection: close\r\n\r\n";
+  const HttpResponse http_response = execute_http_request(endpoint, http_request);
+  if (http_response.metadata.status_code < 200 || http_response.metadata.status_code >= 300) {
+    const std::string detail = response_error_detail(http_response.body);
+    throw std::runtime_error("Ollama endpoint returned HTTP " + std::to_string(http_response.metadata.status_code) +
+                             (detail.empty() ? std::string{} : ": " + detail));
+  }
+
+  const Json::Value response = parse_json(http_response.body, "Ollama model list response");
+  if (!response.isObject() || !response["models"].isArray())
+    throw std::runtime_error("Ollama model list response is missing its models array.");
+
+  std::vector<std::string> models;
+  models.reserve(response["models"].size());
+  for (const auto& model : response["models"]) {
+    if (!model.isObject() || !model["name"].isString() || model["name"].asString().empty())
+      throw std::runtime_error("Ollama model list response contains an invalid model name.");
+    models.push_back(model["name"].asString());
+  }
+  return models;
 }
 
 }  // namespace edu_ai::ai
